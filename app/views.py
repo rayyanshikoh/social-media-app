@@ -1,4 +1,3 @@
-from ast import Is
 from django.shortcuts import render
 from django.shortcuts import get_object_or_404
 from django.core.exceptions import PermissionDenied
@@ -11,7 +10,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 from rest_framework import status
 
 from .models import Post, Comment, Like, Follow
-from .serializers import EditPostSerializer, PostSerializer
+from .serializers import EditPostSerializer, PostSerializer, CommentSerializer
 
 
 class PostViewSet(ListModelMixin, RetrieveModelMixin, CreateModelMixin, DestroyModelMixin, UpdateModelMixin, GenericViewSet):
@@ -56,3 +55,12 @@ class PostViewSet(ListModelMixin, RetrieveModelMixin, CreateModelMixin, DestroyM
         posts = Post.objects.filter(author=request.user)
         serializer = PostSerializer(posts, many=True)
         return Response(serializer.data)
+
+
+class CommentViewSet(ModelViewSet):
+    def get_serializer_context(self):
+        return {'user': self.request.user, 'post': self.kwargs['post_pk']}
+
+    def get_queryset(self):
+        return Comment.objects.filter(post_id=self.kwargs['post_pk']).order_by('date_posted')
+    serializer_class = CommentSerializer

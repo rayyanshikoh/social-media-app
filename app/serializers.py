@@ -31,3 +31,17 @@ class EditPostSerializer(ModelSerializer):
             instance.save()
             return instance
         raise serializers.ValidationError('You cannot edit this post.')
+
+
+class CommentSerializer(ModelSerializer):
+    author = serializers.StringRelatedField(read_only=True)
+    post_id = serializers.StringRelatedField(read_only=True)
+
+    class Meta:
+        model = Comment
+        fields = ['id', 'content', 'author', 'date_posted', 'post_id']
+
+    def create(self, validated_data):
+        user = self.context['user']
+        post = self.context['post']
+        return Comment.objects.create(author=user, post_id=post, **validated_data)
