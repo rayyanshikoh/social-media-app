@@ -1,3 +1,4 @@
+from pyexpat import model
 from turtle import pos
 from requests import Response
 from rest_framework import serializers
@@ -20,6 +21,29 @@ class PostSerializer(ModelSerializer):
         return post
 
 
+class CommentSerializer(ModelSerializer):
+    author = serializers.StringRelatedField(read_only=True)
+    post_id = serializers.StringRelatedField(read_only=True)
+    date_posted = serializers.DateTimeField(read_only=True)
+
+    class Meta:
+        model = Comment
+        fields = ['id', 'content', 'author', 'date_posted', 'post_id']
+
+    def create(self, validated_data):
+        user = self.context['user']
+        post = self.context['post']
+        return Comment.objects.create(author=user, post_id=post, **validated_data)
+
+
+class ViewPostSerializer(ModelSerializer):
+    comments = CommentSerializer(many=True)
+
+    class Meta:
+        model = Post
+        fields = ['id', 'content', 'date_posted', 'author', 'comments']
+
+
 class EditPostSerializer(ModelSerializer):
     class Meta:
         model = Post
@@ -31,17 +55,3 @@ class EditPostSerializer(ModelSerializer):
             instance.save()
             return instance
         raise serializers.ValidationError('You cannot edit this post.')
-
-
-class CommentSerializer(ModelSerializer):
-    author = serializers.StringRelatedField(read_only=True)
-    post_id = serializers.StringRelatedField(read_only=True)
-
-    class Meta:
-        model = Comment
-        fields = ['id', 'content', 'author', 'date_posted', 'post_id']
-
-    def create(self, validated_data):
-        user = self.context['user']
-        post = self.context['post']
-        return Comment.objects.create(author=user, post_id=post, **validated_data)
